@@ -1,13 +1,18 @@
+"""LLM Service Module
+
+Constructs LangGraph agent graphs for conversational AI. Provides two modes:
+- Full agent graph with RAG tool access and memory checkpointing
+- Basic graph for anonymous users without tool access
+"""
+
 from langgraph.graph import StateGraph, END, START
 from langchain_core.messages import SystemMessage
-from typing import TypedDict
-from config import GEMINI_API_KEY
-from rag_service import search_docs
-from langchain_tavily import TavilySearch
-from langgraph.prebuilt import ToolNode, tools_condition
-from langgraph.checkpoint.memory import MemorySaver
 from typing import Annotated
 from typing_extensions import TypedDict
+from config import GEMINI_API_KEY
+from rag_service import search_docs
+from langgraph.prebuilt import ToolNode, tools_condition
+from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph.message import add_messages
 from langchain_openai import ChatOpenAI
 
@@ -18,7 +23,19 @@ class State(TypedDict):
     #messages: Annotated[list[BaseMessage], add_messages]
     #both have same result no need to use BaseMessage
 
-def create_graph(config: dict):
+def create_graph(config: dict = None) -> object:
+    """Create a LangGraph agent with RAG tool access and memory.
+
+    Builds a stateful agent graph that can search the user's uploaded
+    documents via the search_docs tool. Uses MemorySaver for
+    conversation persistence across turns.
+
+    Args:
+        config: Optional configuration dict (reserved for future use).
+
+    Returns:
+        Compiled LangGraph StateGraph with checkpointing enabled.
+    """
     llm = ChatOpenAI(
     model="gemini-2.0-flash",
     api_key=GEMINI_API_KEY,
@@ -43,8 +60,16 @@ def create_graph(config: dict):
     return builder.compile(checkpointer=memory)
   
 
-# Build basic graph (no tools, no memory)
-def create_basic_graph():
+def create_basic_graph() -> object:
+    """Create a basic conversational graph without tools or memory.
+
+    Used for anonymous/unauthenticated users who don't have a personal
+    knowledge base. Provides a friendly voice assistant experience
+    without RAG capabilities or session persistence.
+
+    Returns:
+        Compiled LangGraph StateGraph (no checkpointing).
+    """
     llm = ChatOpenAI(
     model="gemini-2.0-flash",
     api_key=GEMINI_API_KEY,

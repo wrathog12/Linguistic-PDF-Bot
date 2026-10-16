@@ -1,3 +1,9 @@
+"""Document Service Module
+
+Handles PDF document upload, text extraction, chunking, and embedding
+into the Qdrant vector store for RAG-based retrieval.
+"""
+
 from fastapi import UploadFile
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.docstore.document import Document
@@ -5,12 +11,17 @@ import pdfplumber
 from rag_service import vectorstore
 from config import CHUNK_SIZE, CHUNK_OVERLAP
 
-def read_pdf(file: UploadFile) -> str:
-    with pdfplumber.open(file.file) as pdf:
-        text = "\n".join(page.extract_text() or "" for page in pdf.pages)
-    return text
 
-async def process_document_upload(file: UploadFile, userid: str):
+async def process_document_upload(file: UploadFile, userid: str) -> dict:
+    """Process an uploaded PDF: extract text, chunk it, and store embeddings.
+
+    Args:
+        file: The uploaded PDF file from the client.
+        userid: Authenticated user's ID for document isolation.
+
+    Returns:
+        Dict with upload status, chunk count, and filename, or error details.
+    """
     try:
         filename = file.filename
         if not filename.lower().endswith(".pdf"):
