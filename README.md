@@ -1,130 +1,205 @@
-# Voice Bot
+# 📄 Linguistic PDF Bot
 
-A full-stack conversational voice chatbot using FastAPI (Python) for the backend and React (Vite) for the frontend. The bot supports real-time speech-to-text, LLM-based responses, and text-to-speech voice replies, with animated feedback for both user and bot turns.
+An intelligent, full-stack **PDF-powered conversational voice assistant** built with FastAPI, LangGraph, and React. Upload PDFs to build a personal knowledge base, then interact with your documents through natural voice conversations — powered by RAG (Retrieval-Augmented Generation), real-time ASR, and neural TTS.
 
-## Features
+---
 
-- Real-time voice input with VAD (Voice Activity Detection)
-- Animated UI: pulsing circle for user speech, animated blobs for bot replies
-- FastAPI backend with WebSocket streaming
-- Groq Whisper ASR, LangGraph LLM, and Murf TTS integration
-- Interruptible turn-taking: user can interrupt bot reply by speaking
-- **User authentication** with Clerk integration
-- **Personalized experience**: Custom personas and knowledge bases per user
-- **Session memory**: Conversation summaries stored and retrieved across sessions
-- **LangGraph agents**: Advanced conversational AI with tool support
-- **Supabase integration**: User data, personas, and session management
-```
-Flow:
-1. User speaks → Frontend records and detects speech (VAD)
-2. Audio sent to backend via WebSocket
-3. Backend sends audio to Groq Whisper ASR for transcription
-4. Transcription sent to LangGraph agent for response (with user's knowledge base)
-5. Agent response sent to Murf TTS for voice generation
-6. TTS audio streamed back to frontend
-7. Frontend animates and plays bot reply, user can interrupt at any time
-8. Session summaries stored in Supabase for conversation continuity
-```
+## ✨ Key Features
 
-## Code Structure
+| Feature | Description |
+|---|---|
+| 🎙️ **Voice-First Interaction** | Real-time speech-to-text (Groq Whisper) and text-to-speech (Murf AI) for hands-free PDF querying |
+| 📄 **PDF Knowledge Ingestion** | Upload PDFs that are chunked, embedded, and stored in Qdrant for semantic retrieval |
+| 🤖 **LangGraph Agentic RAG** | Multi-step reasoning agent with tool-use — autonomously searches your documents to answer questions |
+| 🧠 **Session Memory** | Conversation context persists across turns using LangGraph's memory checkpointing |
+| 🔐 **User Authentication** | Clerk-powered auth with per-user document isolation and personalized personas |
+| 🗄️ **Supabase Backend** | User profiles, custom personas, and session management stored in Supabase |
+| ⚡ **Real-time WebSocket** | Low-latency streaming pipeline for voice → transcription → LLM → TTS → playback |
+| 🎯 **Interruptible Turns** | Users can interrupt bot responses mid-speech for natural conversation flow |
+
+---
+
+## 🏗️ Architecture
 
 ```
-Voice_Bot/
-├── agentic_chatbot/           # Python backend (FastAPI, LangGraph, Groq integration)
-│   ├── websocket_handler.py   # WebSocket connection handler
-│   ├── audio_services.py      # ASR and TTS services
-│   ├── llm_service.py         # LangGraph agent creation
-│   ├── custom_supabase.py     # Supabase database operations
-│   ├── clean.py               # Text cleaning utilities
-│   ├── main.py                # Main FastAPI app
-│   └── requirements.txt       # Python dependencies
+┌─────────────────────────────────────────────────────────────┐
+│                        Frontend (React + Vite)              │
+│  ┌──────────┐  ┌───────────────┐  ┌──────────────────────┐  │
+│  │ Clerk    │  │ Voice Input   │  │ Animated UI          │  │
+│  │ Auth     │  │ (VAD)         │  │ (Pulsing/Blob Anim)  │  │
+│  └──────────┘  └───────┬───────┘  └──────────────────────┘  │
+└─────────────────────────┼───────────────────────────────────┘
+                          │ WebSocket
+┌─────────────────────────┼───────────────────────────────────┐
+│                    Backend (FastAPI)                         │
+│  ┌──────────┐  ┌───────┴───────┐  ┌──────────────────────┐  │
+│  │ Groq     │  │ LangGraph     │  │ Murf TTS             │  │
+│  │ Whisper  │  │ Agent + RAG   │  │ (Neural Voice)       │  │
+│  │ (ASR)    │  │ + Tools       │  │                      │  │
+│  └──────────┘  └───────┬───────┘  └──────────────────────┘  │
+│                        │                                     │
+│  ┌─────────────────────┴─────────────────────────────────┐  │
+│  │              Qdrant Vector DB (PDF Embeddings)         │  │
+│  │              + Supabase (User Data & Sessions)         │  │
+│  └───────────────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 📁 Project Structure
+
+```
+Linguistic-PDF-Bot/
+├── agentic_chatbot/               # Python backend
+│   ├── app.py                     # FastAPI application entry point
+│   ├── main.py                    # Uvicorn server launcher
+│   ├── config.py                  # Environment variables & model config
+│   ├── websocket_handler.py       # WebSocket connection & message routing
+│   ├── llm_service.py             # LangGraph agent graph construction
+│   ├── rag_service.py             # Qdrant vector search & RAG tool
+│   ├── document_service.py        # PDF upload, parsing & chunking pipeline
+│   ├── audio_services.py          # Groq ASR & Murf TTS integration
+│   ├── auth.py                    # Clerk JWT authentication middleware
+│   ├── custom_supabase.py         # Supabase client for user/session data
+│   ├── custom_endpoints.py        # REST API routes for persona management
+│   ├── requirements.txt           # Python dependencies
+│   └── pyproject.toml             # Project metadata & build config
 │
-├── frontend/                  # React frontend (Vite, Tailwind, Clerk)
-│   ├── src/pages/chatbot.jsx  # Main chatbot page
-│   ├── components/voiceBot.jsx# Voice bot UI and logic
-│   └── ...                    # Other frontend files
+├── frontend/                      # React frontend (Vite)
+│   ├── src/                       # Source code (pages, hooks, utils)
+│   ├── components/                # Reusable UI components
+│   ├── context/                   # React context providers
+│   ├── lib/                       # Utility libraries
+│   ├── public/                    # Static assets
+│   ├── index.html                 # HTML entry point
+│   ├── package.json               # Node.js dependencies
+│   └── vite.config.js             # Vite build configuration
 │
-├── README.md                  # This file
-└── ...                        # Other project files
+├── README.md                      # This file
+└── CONTRIBUTING.md                # Contribution guidelines
 ```
 
-## Setup
+---
 
-### 1. Backend (Python/FastAPI)
+## 🚀 Getting Started
+
+### Prerequisites
 
 - Python 3.12+
-- Install dependencies:
-  ```bash
-  cd agentic_chatbot
-  pip install -r requirements.txt
-  ```
-- Set your environment variables in a `.env` file:
-  ```env
-  GROQ_API_KEY=your_groq_api_key_here
-  MURF_API_KEY=your_murf_api_key_here
-  SUPABASE_URL=your_supabase_url
-  SUPABASE_ANON_KEY=your_supabase_anon_key
-  ```
-- Run the backend:
-  ```bash
-  uvicorn main:app --reload
-  ```
-
-### 2. Frontend (React/Vite)
-
 - Node.js 18+
-- Install dependencies:
-  ```bash
-  cd frontend
-  npm install
-  ```
-- Set your environment variables:
-  ```env
-  VITE_CLERK_PUBLISHABLE_KEY=your_clerk_publishable_key
-  VITE_BACKEND_URL_WEBSOCKET=ws://localhost:8000
-  ```
-- Start the frontend:
-  ```bash
-  npm run dev
-  ```
-- The app will be available at http://localhost:5173 (or your Vite port)
+- Docker (for Qdrant) or Qdrant Cloud account
+- API keys: Groq, Murf AI, Gemini, Clerk, Supabase
 
-### 3. Database Setup (Supabase)
+### 1. Clone the Repository
 
-- Create a Supabase project
-- Set up the required tables for users, personas, and sessions
-- Update the Supabase URL and keys in your environment variables
+```bash
+git clone https://github.com/wrathog12/Linguistic-PDF-Bot.git
+cd Linguistic-PDF-Bot
+```
 
-## Usage
+### 2. Backend Setup
 
-### For Authenticated Users:
-- Sign in with Clerk authentication
-- Click "Start" to begin a personalized conversation
-- Your persona, knowledge base, and conversation history will be loaded
-- Speak into your mic - the UI will show "Connecting..." while initializing
-- After VAD completes noise capturing, you'll see "Connected" and can start talking
-- Session summaries are automatically saved for future conversations
+```bash
+cd agentic_chatbot
+pip install -r requirements.txt
+```
 
-### For Anonymous Users:
-- Click "Start" without signing in for a basic conversation
-- No personalization or session memory available
-- Full conversational capabilities still work
+Create a `.env` file:
 
-## Connection Flow
+```env
+GROQ_API_KEY=your_groq_api_key
+GEMINI_API_KEY=your_gemini_api_key
+MURF_API_KEY=your_murf_api_key
+SUPABASE_URL=your_supabase_url
+SUPABASE_ANON_KEY=your_supabase_anon_key
+```
 
-1. Click "Start" → Shows "Connecting..."
-2. WebSocket connects and backend processes user data (personas, knowledge base)
-3. Backend sends `connection_successful` message
-4. Frontend activates VAD with 1-second noise capturing
-5. After noise capturing completes → Shows "Connected" and ready to listen
-6. Bot sends a personalized greeting message
+Start the backend:
 
-## Troubleshooting
+```bash
+uvicorn main:app --reload --port 8000
+```
 
-- **WebSocket connection errors:** Ensure the backend is running on port 8000 and accessible from the frontend.
-- **Groq API errors:** Check your API key and usage limits.
-- **Murf TTS errors:** Verify your Murf API key and account status.
-- **Supabase connection issues:** Confirm your Supabase URL and keys are correct.
-- **Authentication issues:** Check your Clerk configuration and publishable key.
+### 3. Frontend Setup
 
-## License
+```bash
+cd frontend
+npm install
+```
+
+Create a `.env` file:
+
+```env
+VITE_CLERK_PUBLISHABLE_KEY=your_clerk_key
+VITE_BACKEND_URL_WEBSOCKET=ws://localhost:8000
+```
+
+Start the frontend:
+
+```bash
+npm run dev
+```
+
+The app will be available at **http://localhost:5173**
+
+### 4. Qdrant Vector Database
+
+Start Qdrant locally with Docker:
+
+```bash
+docker run -p 6333:6333 qdrant/qdrant
+```
+
+Or configure a Qdrant Cloud endpoint in your environment.
+
+---
+
+## 💡 Usage
+
+### Authenticated Users
+1. Sign in via Clerk authentication
+2. Upload PDF documents through the upload interface
+3. Click **"Start"** to begin a voice conversation
+4. Ask questions about your uploaded documents — the agent will search your knowledge base
+5. Session summaries are automatically saved for conversation continuity
+
+### Anonymous Users
+- Click **"Start"** without signing in for general conversational AI
+- Full voice capabilities work, but no PDF knowledge base or session persistence
+
+---
+
+## 🔧 Tech Stack
+
+| Layer | Technology |
+|---|---|
+| **Frontend** | React, Vite, Clerk Auth |
+| **Backend** | FastAPI, Python 3.12 |
+| **LLM** | Gemini 2.0 Flash (via OpenAI-compatible API) |
+| **Agent Framework** | LangGraph (StateGraph + ToolNode) |
+| **ASR** | Groq Whisper Large v3 Turbo |
+| **TTS** | Murf AI (Neural Voices) |
+| **Embeddings** | Nomic Embed Text v1.5 (HuggingFace) |
+| **Vector DB** | Qdrant (Cosine Similarity) |
+| **Database** | Supabase (PostgreSQL) |
+| **Auth** | Clerk |
+
+---
+
+## 🐛 Troubleshooting
+
+| Issue | Solution |
+|---|---|
+| WebSocket connection errors | Ensure backend is running on port 8000 |
+| Groq API errors | Verify API key and check usage limits |
+| Murf TTS failures | Confirm Murf API key and account status |
+| Qdrant connection refused | Start Qdrant: `docker run -p 6333:6333 qdrant/qdrant` |
+| Supabase issues | Double-check URL and anon key in `.env` |
+| Clerk auth not working | Verify publishable key in frontend `.env` |
+
+---
+
+## 📝 License
+
+This project is open source and available under the [MIT License](LICENSE).
