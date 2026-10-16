@@ -1,1 +1,16 @@
 .env
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+.eggs/
+*.egg
+qdrant_storage/
+uv.lock
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+*.log
