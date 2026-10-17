@@ -13,7 +13,11 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(me
 logger = logging.getLogger("voicebot")
 
 # ---------------- INIT FastAPI ----------------
-app = FastAPI()
+app = FastAPI(
+    title="Linguistic PDF Bot API",
+    description="Voice-powered PDF assistant with RAG and LangGraph agents",
+    version="1.0.0",
+)
 
 app.include_router(persona_router)
 
@@ -24,6 +28,13 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# ------------------ Health Check ------------------
+
+@app.get("/health")
+async def health_check():
+    """Health check endpoint for monitoring and container orchestration."""
+    return {"status": "healthy", "service": "linguistic-pdf-bot"}
 
 # ------------------ FastAPI WebSocket ------------------
 
