@@ -53,7 +53,7 @@ const Logo = () => {
         animate={{ opacity: 1 }}
         className="font-medium whitespace-pre text-black dark:text-white"
       >
-        Voice Bot
+        Linguistic PDF Bot
       </motion.span>
     </a>
   );
