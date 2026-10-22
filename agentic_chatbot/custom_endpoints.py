@@ -1,11 +1,21 @@
+"""Persona Endpoints Module
+
+REST API routes for creating and listing user personas.
+Each persona defines a custom bot personality with its own prompt,
+language, and accent settings.
+"""
+
+import logging
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 from typing import Optional
-from datetime import datetime
-import uuid
 
 from auth import get_current_user
-from custom_supabase import insert_persona_to_supabase
+from custom_supabase import insert_persona_to_supabase, get_all_personas_for_user
+
+logger = logging.getLogger("voicebot")
+
+# ==================== Request/Response Models ====================
 
 class CreatePersonaRequest(BaseModel):
     name: str
@@ -26,15 +36,25 @@ class PersonaResponse(BaseModel):
     created_at: str
     updated_at: str
 
+class PersonaListResponse(BaseModel):
+    personas: list[dict]
+    total: int
+    default_count: int
+    user_count: int
+
+# ==================== Router ====================
+
 router = APIRouter(prefix="/personas", tags=["personas"])
+
 
 @router.post("/create", response_model=PersonaResponse)
 async def create_persona(
     persona_data: CreatePersonaRequest,
     user=Depends(get_current_user)
 ):
+    """Create a new custom persona for the authenticated user."""
     try:
-        user_id = user['sub']  # Extract user_id from JWT payload
+        user_id = user['sub']
         
         # Validate required fields
         if not persona_data.name.strip():
@@ -49,7 +69,6 @@ async def create_persona(
                 detail="Custom prompt cannot be empty"
             )
         
-        # Insert persona using the dedicated function
         created_persona = await insert_persona_to_supabase(
             name=persona_data.name,
             description=persona_data.description,
@@ -58,43 +77,38 @@ async def create_persona(
             user_id=user_id
         )
         
-        print(f"✅ Persona created successfully for user {user_id}: {created_persona['name']}")
+        logger.info(f"Persona created for user {user_id[:8]}...: {created_persona['name']}")
         
         return PersonaResponse(**created_persona)
         
     except HTTPException:
-        # Re-raise HTTPExceptions (from validation or insert function)
         raise
     except Exception as e:
-        print(f"❌ Unexpected error in create_persona: {str(e)}")
+        logger.exception(f"Unexpected error in create_persona: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="An unexpected error occurred while creating the persona"
         )
 
-from custom_supabase import get_all_personas_for_user
-
-class PersonaListResponse(BaseModel):
-    personas: list[dict]
-    total: int
-    default_count: int
-    user_count: int
 
 @router.get("/", response_model=PersonaListResponse)
 async def get_all_personas(user=Depends(get_current_user)):
+    """Retrieve all personas (default + custom) for the authenticated user."""
     try:
         user_id = user['sub']
         result = await get_all_personas_for_user(user_id)
         
-        print(f"✅ Retrieved {result['total']} personas for user {user_id} ({result['default_count']} default, {result['user_count']} custom)")
+        logger.info(
+            f"Retrieved {result['total']} personas for user {user_id[:8]}... "
+            f"({result['default_count']} default, {result['user_count']} custom)"
+        )
         
         return PersonaListResponse(**result)
         
     except HTTPException:
-        # Re-raise HTTPExceptions (from the function)
         raise
     except Exception as e:
-        print(f"❌ Unexpected error in get_all_personas: {str(e)}")
+        logger.exception(f"Unexpected error in get_all_personas: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="An unexpected error occurred while fetching personas"
