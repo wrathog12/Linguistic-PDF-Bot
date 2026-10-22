@@ -1,17 +1,22 @@
 """
-Voice Bot Application - Entry Point
+Linguistic PDF Bot — Entry Point
 
-This file has been refactored. The main application logic is now in app.py
-Please run: python app.py or use uvicorn app:app
+This module serves as the application entry point. The main application
+logic lives in app.py with modular service files.
 
-The modular structure:
-- config.py: Configuration and constants
-- audio_services.py: ASR and TTS functionality 
-- rag_service.py: Vector store and document search
-- llm_service.py: LangGraph and LLM handling
-- document_service.py: PDF processing and document upload
-- websocket_handler.py: WebSocket connection handling
-- app.py: FastAPI application and routes
+Run with: uvicorn main:app --reload --port 8000
+
+Module structure:
+- config.py:             Environment variables & model configuration
+- app.py:                FastAPI application, middleware, and routes
+- websocket_handler.py:  WebSocket connection & voice pipeline handling
+- llm_service.py:        LangGraph agent graph construction
+- rag_service.py:        Qdrant vector store & document search tool
+- document_service.py:   PDF upload, parsing & chunking
+- audio_services.py:     Groq ASR & Murf TTS integration
+- auth.py:               JWT authentication middleware
+- custom_supabase.py:    Supabase client for user/session data
+- custom_endpoints.py:   REST API routes for persona management
 """
 
 from app import app
